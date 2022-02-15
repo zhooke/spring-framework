@@ -19,6 +19,7 @@ package org.springframework.transaction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
@@ -289,4 +290,8 @@ public class TransactionSupportTests {
 		assertThat(TransactionSynchronizationManager.isSynchronizationActive()).isFalse();
 	}
 
+	@Transactional
+	public void transactionDemo(){
+
+	}
 }
