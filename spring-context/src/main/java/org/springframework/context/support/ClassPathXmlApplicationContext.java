@@ -178,6 +178,8 @@ public class ClassPathXmlApplicationContext extends AbstractXmlApplicationContex
 	}
 
 	/**
+	 * 所有的ClassPathXmlApplicationContext都是通过该方法加载
+	 *
 	 * Create a new ClassPathXmlApplicationContext with the given parent,
 	 * loading the definitions from the given XML files and automatically
 	 * refreshing the context.
@@ -192,11 +194,13 @@ public class ClassPathXmlApplicationContext extends AbstractXmlApplicationContex
 	public ClassPathXmlApplicationContext(String[] paths, Class<?> clazz, @Nullable ApplicationContext parent)
 			throws BeansException {
 
+		//父级环境对象 默认是null
 		super(parent);
 		Assert.notNull(paths, "Path array must not be null");
 		Assert.notNull(clazz, "Class argument must not be null");
 		this.configResources = new Resource[paths.length];
 		for (int i = 0; i < paths.length; i++) {
+			//解析path，处理其中的特殊符号，初始化配置文件路径
 			this.configResources[i] = new ClassPathResource(paths[i], clazz);
 		}
 		refresh();
