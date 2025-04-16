@@ -82,6 +82,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.util.function.ThrowingSupplier;
 
 /**
+ * 结合AbstractBeanFactory，并且实现了AutowireCapableBeanFactory的方法
+ * 主要是对bean注册后的一个操作
+ *
  * Abstract bean factory superclass that implements default bean creation,
  * with the full capabilities specified by the {@link RootBeanDefinition} class.
  * Implements the {@link org.springframework.beans.factory.config.AutowireCapableBeanFactory}

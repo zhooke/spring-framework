@@ -16,14 +16,6 @@
 
 package org.springframework.beans.factory.support;
 
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
-
 import org.springframework.beans.BeanMetadataAttributeAccessor;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -37,6 +29,14 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Base class for concrete, full-fledged {@link BeanDefinition} classes,
@@ -168,65 +168,150 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private volatile Object beanClass;
 
+	/**
+	 * bean的作用范围，对应bean属性scope
+	 */
 	@Nullable
 	private String scope = SCOPE_DEFAULT;
 
+	/**
+	 * 是否是抽象，对应bean属性abstract
+	 */
 	private boolean abstractFlag = false;
 
+	/**
+	 * 是否延迟加载 对应bean属性lazy-inti
+	 */
 	@Nullable
 	private Boolean lazyInit;
 
+	/**
+	 * 自动注入模式，对应bean属性的autowire
+	 */
 	private int autowireMode = AUTOWIRE_NO;
 
+	/**
+	 * 依赖检查，spring3.0后弃用了这个属性
+	 */
 	private int dependencyCheck = DEPENDENCY_CHECK_NONE;
 
+	/**
+	 * 用来表示一个bean的实例化依靠另一个bean先实例化，对应bean属性depend-on
+	 */
 	@Nullable
 	private String[] dependsOn;
 
+	/**
+	 * autowireCandidate=false 这样容易在查找自动装配对象时，将不考虑该bean，即它不会被考虑作为其他bean自动装配的候选者，但是该bean本身还是可以使用自动装配来注入其他bean的
+	 * 对应bean属性autowire-candidate
+	 */
 	private boolean autowireCandidate = true;
 
+	/**
+	 * 自动装配时，当出现多个bean候选者时，将作为首选者，对应bean属性primary
+	 */
 	private boolean primary = false;
 
+	/**
+	 * 用于记录Qualifier，对应子元素qualifier
+	 */
 	private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>();
 
 	@Nullable
 	private Supplier<?> instanceSupplier;
 
+	/**
+	 * 允许访问非公开的构造器和方法，程序设置
+	 */
 	private boolean nonPublicAccessAllowed = true;
 
+	/**
+	 * 是否以一种宽松的模式解析构造函数，默认为true,
+	 * 如果为false,则在如下情况
+	 * interface ITest{}
+	 * class  ITestImpl implements ITest{};
+	 * class Main{
+	 *     Main(ITest i){}
+	 *     Main(ITestImpl i){}
+	 * }
+	 * 抛出异常，因为Spring无法准确定位哪个构造函数
+	 * 程序设置
+	 */
 	private boolean lenientConstructorResolution = true;
 
+	/**
+	 * bean实例的工厂名称，对应bean属性factory-bean
+	 */
 	@Nullable
 	private String factoryBeanName;
 
+	/**
+	 * bean实例的工厂名称，对应bean属性factory-bean
+	 */
 	@Nullable
 	private String factoryMethodName;
 
+	/**
+	 * 记录构造函数注入属性，对应bean属性constructor-arg
+	 */
 	@Nullable
 	private ConstructorArgumentValues constructorArgumentValues;
 
+	/**
+	 * 普通属性集合
+	 */
 	@Nullable
 	private MutablePropertyValues propertyValues;
 
+	/**
+	 * 方法重写的持有者，记录lookup-method、replaced-method元素
+	 */
 	private MethodOverrides methodOverrides = new MethodOverrides();
 
+	/**
+	 * 初始化方法，对应bean属性init-method
+	 */
 	@Nullable
 	private String[] initMethodNames;
 
+	/**
+	 * 销毁方法，对应bean属性destroy-method
+	 */
 	@Nullable
 	private String[] destroyMethodNames;
 
+	/**
+	 * 是否执行inti-method
+	 */
 	private boolean enforceInitMethod = true;
 
+	/**
+	 * 是否执行destroy-method
+	 */
 	private boolean enforceDestroyMethod = true;
 
+	/**
+	 * 是否是用于定义的而不是应用程序本身的，创建AOP时候为true，程序设置
+	 */
 	private boolean synthetic = false;
 
+	/**
+	 * 定义这个bean的应用
+	 * 		ROLE_APPLICATION = 0：用户
+	 * 		ROLE_SUPPORT = 1：某些复杂配置的一部分程序设置
+	 * 		ROLE_INFRASTRUCTURE = 2：完全内部使用，与用户无关
+	 */
 	private int role = BeanDefinition.ROLE_APPLICATION;
 
+	/**
+	 * bean的描述信息
+	 */
 	@Nullable
 	private String description;
 
+	/**
+	 * 这个bean定义的资源
+	 */
 	@Nullable
 	private Resource resource;
 
