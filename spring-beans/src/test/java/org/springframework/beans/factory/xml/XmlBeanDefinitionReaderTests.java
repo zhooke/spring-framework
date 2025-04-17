@@ -108,7 +108,7 @@ class XmlBeanDefinitionReaderTests {
 		assertBeanDefinitions(registry);
 	}
 
-	private void assertBeanDefinitions(BeanDefinitionRegistry registry) {
+	private void  assertBeanDefinitions(BeanDefinitionRegistry registry) {
 		assertThat(registry.getBeanDefinitionCount()).isEqualTo(24);
 		assertThat(registry.getBeanDefinitionNames()).hasSize(24);
 		assertThat(registry.getBeanDefinitionNames()).contains("rod", "aliased");

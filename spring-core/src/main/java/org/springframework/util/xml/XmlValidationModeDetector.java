@@ -16,14 +16,14 @@
 
 package org.springframework.util.xml;
 
+import org.springframework.lang.Nullable;
+import org.springframework.util.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.CharConversionException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
-import org.springframework.lang.Nullable;
-import org.springframework.util.StringUtils;
 
 /**
  * Detects whether an XML stream is using DTD- or XSD-based validation.
@@ -81,6 +81,8 @@ public class XmlValidationModeDetector {
 
 
 	/**
+	 * XML专用校验器
+	 *
 	 * Detect the validation mode for the XML document in the supplied {@link InputStream}.
 	 * <p>Note that the supplied {@link InputStream} is closed by this method before returning.
 	 * @param inputStream the InputStream to parse
@@ -167,6 +169,8 @@ public class XmlValidationModeDetector {
 	}
 
 	/**
+	 * 处理注解行，并且更新inComment
+	 *
 	 * Consume the next comment token, update the "inComment" flag,
 	 * and return the remaining content.
 	 */
@@ -189,6 +193,10 @@ public class XmlValidationModeDetector {
 	 * @see #commentToken(String, String, boolean)
 	 */
 	private int endComment(String line) {
+		/**
+		 * 这里传false的原因是上个方法中的三元判断：this.inComment ? endComment(line) : startComment(line)
+		 * this.inComment默认是false，进入startComment(line)后置为true，判断末尾时恢复false
+		 */
 		return commentToken(line, END_COMMENT, false);
 	}
 

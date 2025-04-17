@@ -16,9 +16,6 @@
 
 package org.springframework.beans.factory.support;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanCurrentlyInCreationException;
@@ -28,7 +25,12 @@ import org.springframework.core.AttributeAccessor;
 import org.springframework.core.ResolvableType;
 import org.springframework.lang.Nullable;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
+ * 继承了DefaultSingletonBeanRegistry，定义了对FactoryBean的特殊处理操作
+ *
  * Support base class for singleton registries which need to handle
  * {@link org.springframework.beans.factory.FactoryBean} instances,
  * integrated with {@link DefaultSingletonBeanRegistry}'s singleton management.
@@ -108,6 +110,11 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 	}
 
 	/**
+	 * 1.对FactoryBean正确性的验证
+	 * 2.对非FactoryBean不做任何处理
+	 * 3.对bean进行转换
+	 * 4.将从Factory中解析bean的工作委托给getObjectFromFactoryBean
+	 *
 	 * Obtain an object to expose from the given FactoryBean.
 	 * @param factory the FactoryBean instance
 	 * @param beanName the name of the bean
@@ -118,6 +125,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 	 */
 	protected Object getObjectFromFactoryBean(FactoryBean<?> factory, String beanName, boolean shouldPostProcess) {
 		if (factory.isSingleton() && containsSingleton(beanName)) {
+			//如果是单例模式
 			synchronized (getSingletonMutex()) {
 				Object object = this.factoryBeanObjectCache.get(beanName);
 				if (object == null) {
@@ -179,6 +187,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 	private Object doGetObjectFromFactoryBean(FactoryBean<?> factory, String beanName) throws BeanCreationException {
 		Object object;
 		try {
+			//直接调用getObject方法
 			object = factory.getObject();
 		}
 		catch (FactoryBeanNotInitializedException ex) {

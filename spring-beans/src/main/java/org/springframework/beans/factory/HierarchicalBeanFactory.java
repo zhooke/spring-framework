@@ -19,6 +19,8 @@ package org.springframework.beans.factory;
 import org.springframework.lang.Nullable;
 
 /**
+ * 继承了BeanFactory，增加了对parentBeanFactory的支持 Hierarchical/ˌhaɪəˈrɑːrkɪkl/
+ *
  * Sub-interface implemented by bean factories that can be part
  * of a hierarchy.
  *

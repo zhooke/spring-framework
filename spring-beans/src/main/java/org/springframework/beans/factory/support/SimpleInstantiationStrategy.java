@@ -16,10 +16,6 @@
 
 package org.springframework.beans.factory.support;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 import org.springframework.beans.BeanInstantiationException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.BeanFactory;
@@ -27,6 +23,10 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * Simple object instantiation strategy for use in a BeanFactory.
@@ -69,10 +69,28 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 		}
 	}
 
-
+	/**
+	 * 使用默认构造函数时，根据hasMethodOverrides参数选择cglib动态代理还是反射的方式
+	 * hasMethodOverrides为true，也就是配置中存在replace或者lookup，如果使用反射的方式
+	 * 就需要将这两个配置提供的功能加载进来，增加复杂度
+	 * 而通过cglib，将包含两个特性所对应的拦截器加载进去，这样就可以保证在调用方法的时候会被相应的拦截器增强，
+	 * 返回值为包含拦截器的代理实例
+	 *
+	 * @param bd the bean definition
+	 * @param beanName the name of the bean when it is created in this context.
+	 * The name can be {@code null} if we are autowiring a bean which doesn't
+	 * belong to the factory.
+	 * @param owner the owning BeanFactory
+	 * @return
+	 */
 	@Override
 	public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner) {
 		// Don't override the class with CGLIB if no overrides.
+		/**
+		 * 如果有需要覆盖或者动态替换的方法，则需要使用cglib进行动态代理，
+		 * 因为可以在创建代理的同时将动态方法植入类中，但是如果没有需要动态改动的方法
+		 * 那么直接通过反射就可以了
+		 */
 		if (!bd.hasMethodOverrides()) {
 			Constructor<?> constructorToUse;
 			synchronized (bd.constructorArgumentLock) {
@@ -95,6 +113,7 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 		}
 		else {
 			// Must generate CGLIB subclass.
+			//通过cglib进行动态代理
 			return instantiateWithMethodInjection(bd, beanName, owner);
 		}
 	}

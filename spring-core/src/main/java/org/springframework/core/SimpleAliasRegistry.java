@@ -16,21 +16,22 @@
 
 package org.springframework.core;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.util.StringValueResolver;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.springframework.util.Assert;
-import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
-import org.springframework.util.StringValueResolver;
-
 /**
+ * 简单的实现了alias增删改接口，通过map进行缓存
+ *
  * Simple implementation of the {@link AliasRegistry} interface.
  *
  * <p>Serves as base class for
@@ -57,6 +58,7 @@ public class SimpleAliasRegistry implements AliasRegistry {
 		Assert.hasText(alias, "'alias' must not be empty");
 		synchronized (this.aliasMap) {
 			if (alias.equals(name)) {
+				//如果alias和beanName相同的话，则不记录alias并且删除对应的alias
 				this.aliasMap.remove(alias);
 				if (logger.isDebugEnabled()) {
 					logger.debug("Alias definition '" + alias + "' ignored since it points to same name");
@@ -78,6 +80,10 @@ public class SimpleAliasRegistry implements AliasRegistry {
 								registeredName + "' with new target name '" + name + "'");
 					}
 				}
+				/**
+				 * 当A-B存在是，若再次属性A->C->B时，则会抛出异常
+				 * 也就是校验 beanName、alias、alias对应的beanName三者是否相同
+				 */
 				checkForAliasCircle(name, alias);
 				this.aliasMap.put(alias, name);
 				if (logger.isTraceEnabled()) {
@@ -107,6 +113,14 @@ public class SimpleAliasRegistry implements AliasRegistry {
 				(registeredName != null && hasAlias(name, registeredName));
 	}
 
+	/**
+	 * aliasMap 是一个共享的可变状态（ConcurrentHashMap），可能会被多个线程同时访问或修改。
+	 * 移除操作不仅涉及 remove 方法调用，还包含后续的空值检查逻辑，这两步操作必须保证原子性，避免并发问题。
+	 * 如果不在这里加锁，可能会出现以下问题：
+	 * 线程 A 调用 remove 后，线程 B 同时修改了 aliasMap，导致线程 A 的空值检查结果不一致。
+	 *
+	 * @param alias the alias to remove
+	 */
 	@Override
 	public void removeAlias(String alias) {
 		synchronized (this.aliasMap) {

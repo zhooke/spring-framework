@@ -16,17 +16,16 @@
 
 package org.springframework.beans.factory.xml;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.lang.Nullable;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  * {@link EntityResolver} implementation for the Spring beans DTD,
@@ -50,7 +49,16 @@ public class BeansDtdResolver implements EntityResolver {
 
 	private static final Log logger = LogFactory.getLog(BeansDtdResolver.class);
 
-
+	/**
+	 * dtd的解析实现
+	 *
+	 * @param publicId The public identifier of the external entity
+	 *        being referenced, or null if none was supplied.
+	 * @param systemId The system identifier of the external entity
+	 *        being referenced.
+	 * @return
+	 * @throws IOException
+	 */
 	@Override
 	@Nullable
 	public InputSource resolveEntity(@Nullable String publicId, @Nullable String systemId) throws IOException {
