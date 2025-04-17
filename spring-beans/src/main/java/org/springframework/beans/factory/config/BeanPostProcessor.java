@@ -20,6 +20,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.lang.Nullable;
 
 /**
+ * 用户可以实现该接口，在bean初始化前根据业务需求调用它的两个方法
+ *
  * Factory hook that allows for custom modification of new bean instances &mdash;
  * for example, checking for marker interfaces or wrapping beans with proxies.
  *

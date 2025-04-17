@@ -17,6 +17,11 @@
 package org.springframework.beans.factory;
 
 /**
+ * spring中提供了一些Aware相关的接口，比如：BeanFactoryAware、ApplicationContextAware、ResourceLoaderAware、
+ * ServletContextAware等，实现这些Aware接口的bean在被初始化后，可以取得一些相应的资源，例如：
+ * 实现BeanFactoryAware的bean在初始化后，spring容器将会注入BeanFactory的实例，而实现ApplicationContextAware的bean，
+ * 在bean被初始化，将会被注入ApplicationContext的实例等。
+ *
  * A marker superinterface indicating that a bean is eligible to be notified by the
  * Spring container of a particular framework object through a callback-style method.
  * The actual method signature is determined by individual subinterfaces but should

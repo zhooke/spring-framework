@@ -1348,22 +1348,27 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		descriptor.initParameterNameDiscovery(getParameterNameDiscoverer());
 		if (Optional.class == descriptor.getDependencyType()) {
+			//Optional类注入的特殊处理
 			return createOptionalDependency(descriptor, requestingBeanName);
 		}
 		else if (ObjectFactory.class == descriptor.getDependencyType() ||
 				ObjectProvider.class == descriptor.getDependencyType()) {
+			//ObjectFactory类注入的特殊处理
 			return new DependencyObjectProvider(descriptor, requestingBeanName);
 		}
 		else if (javaxInjectProviderClass == descriptor.getDependencyType()) {
+			//javaxInjectProviderClass类注入的特殊处理
 			return new Jsr330Factory().createDependencyProvider(descriptor, requestingBeanName);
 		}
 		else if (descriptor.supportsLazyResolution()) {
+			//依赖关系支持延迟加载
 			Object result = getAutowireCandidateResolver().getLazyResolutionProxyIfNecessary(
 					descriptor, requestingBeanName);
 			if (result != null) {
 				return result;
 			}
 		}
+		//通用类处理逻辑
 		return doResolveDependency(descriptor, requestingBeanName, autowiredBeanNames, typeConverter);
 	}
 
@@ -1373,6 +1378,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		InjectionPoint previousInjectionPoint = ConstructorResolver.setCurrentInjectionPoint(descriptor);
 		try {
+			//提前解析单例bean，看是否支持，目前有@Autowired
 			// Step 1: pre-resolved shortcut for single bean match, e.g. from @Autowired
 			Object shortcut = descriptor.resolveShortcut(this);
 			if (shortcut != null) {
@@ -1381,6 +1387,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 			Class<?> type = descriptor.getDependencyType();
 
+			//用于支持spring中新增的注解@Value
 			// Step 2: pre-defined value or expression, e.g. from @Value
 			Object value = getAutowireCandidateResolver().getSuggestedValue(descriptor);
 			if (value != null) {
@@ -1402,6 +1409,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 			}
 
+			//依赖类型为stream、array、collection、map的时候处理方式
 			// Step 3a: multiple beans as stream / array / standard collection / plain map
 			Object multipleBeans = resolveMultipleBeans(descriptor, beanName, autowiredBeanNames, typeConverter);
 			if (multipleBeans != null) {
@@ -1417,6 +1425,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 				// Raise exception if nothing found for required injection point
 				if (isRequired(descriptor)) {
+					//如果Autowired的require属性为true，而找到的匹配项却为空则只能抛出异常
 					raiseNoMatchingBeanFound(type, descriptor.getResolvableType(), descriptor);
 				}
 				return null;
@@ -1427,6 +1436,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 			// Step 4: determine single candidate
 			if (matchingBeans.size() > 1) {
+				//可以确定最多只有一个匹配项
 				autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
 				if (autowiredBeanName == null) {
 					if (isRequired(descriptor) || !indicatesArrayCollectionOrMap(type)) {
@@ -1481,6 +1491,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		Class<?> type = descriptor.getDependencyType();
 
 		if (descriptor instanceof StreamDependencyDescriptor streamDependencyDescriptor) {
+			//属性为StreamDependencyDescriptor
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
 			if (autowiredBeanNames != null) {
 				autowiredBeanNames.addAll(matchingBeans.keySet());
@@ -1494,6 +1505,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			return stream;
 		}
 		else if (type.isArray()) {
+			//属性为Array
 			Class<?> componentType = type.componentType();
 			ResolvableType resolvableType = descriptor.getResolvableType();
 			Class<?> resolvedArrayType = resolvableType.resolve(type);
@@ -1522,9 +1534,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			return result;
 		}
 		else if (Collection.class == type || Set.class == type || List.class == type) {
+			//属性为Collection
 			return resolveMultipleBeanCollection(descriptor, beanName, autowiredBeanNames, typeConverter);
 		}
 		else if (Map.class == type) {
+			//属性为Map
 			return resolveMultipleBeanMap(descriptor, beanName, autowiredBeanNames, typeConverter);
 		}
 		return null;
