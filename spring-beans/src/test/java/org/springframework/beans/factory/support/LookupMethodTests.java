@@ -27,6 +27,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
+ * lookup-method测试类
+ *
  * @author Karl Pietrzak
  * @author Juergen Hoeller
  */

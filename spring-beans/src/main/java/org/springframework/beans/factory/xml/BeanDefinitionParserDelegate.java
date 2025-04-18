@@ -531,7 +531,7 @@ public class BeanDefinitionParserDelegate {
 
 			//解析元数据 key-value
 			parseMetaElements(ele, bd);
-			//解析lookUp-method方法
+			//解析lookup-method方法
 			parseLookupOverrideSubElements(ele, bd.getMethodOverrides());
 			//解析replace-method方法
 			parseReplacedMethodSubElements(ele, bd.getMethodOverrides());
@@ -677,6 +677,7 @@ public class BeanDefinitionParserDelegate {
 	 * Parse the meta elements underneath the given element, if any.
 	 */
 	public void parseMetaElements(Element ele, BeanMetadataAttributeAccessor attributeAccessor) {
+		//获取当前节点的所以子节点
 		NodeList nl = ele.getChildNodes();
 		for (int i = 0; i < nl.getLength(); i++) {
 			Node node = nl.item(i);
@@ -1486,6 +1487,7 @@ public class BeanDefinitionParserDelegate {
 	 */
 	public BeanDefinitionHolder decorateBeanDefinitionIfRequired(
 			Element ele, BeanDefinitionHolder originalDef, @Nullable BeanDefinition containingBd) {
+		//containingBd是父类的BeanDefinition，首次传入的时候是null
 
 		BeanDefinitionHolder finalDefinition = originalDef;
 

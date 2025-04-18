@@ -23,6 +23,9 @@ import org.springframework.core.ResolvableType;
 import org.springframework.lang.Nullable;
 
 /**
+ * BeanDefinition是配置文件<bean>元素标签在容器中的内部表现形式。
+ * <bean>元素标签拥有class、scope、lazy-init等配置属性
+ *
  * A BeanDefinition describes a bean instance, which has property values,
  * constructor argument values, and further information supplied by
  * concrete implementations.

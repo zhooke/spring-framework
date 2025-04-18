@@ -39,6 +39,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 /**
+ * BeanDefinition的实现和扩展
+ *
  * Base class for concrete, full-fledged {@link BeanDefinition} classes,
  * factoring out common properties of {@link GenericBeanDefinition},
  * {@link RootBeanDefinition}, and {@link ChildBeanDefinition}.
