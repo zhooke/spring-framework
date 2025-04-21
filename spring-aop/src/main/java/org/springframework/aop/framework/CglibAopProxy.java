@@ -16,21 +16,9 @@
 
 package org.springframework.aop.framework;
 
-import java.io.Serializable;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.UndeclaredThrowableException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.WeakHashMap;
-
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.AopInvocationException;
 import org.springframework.aop.RawTargetAccess;
 import org.springframework.aop.TargetSource;
@@ -56,6 +44,17 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
+
+import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * CGLIB-based {@link AopProxy} implementation for the Spring AOP framework.
@@ -187,9 +186,11 @@ class CglibAopProxy implements AopProxy, Serializable {
 				}
 			}
 
+			//校验class
 			// Validate the class, writing log messages as necessary.
 			validateClassIfNecessary(proxySuperClass, classLoader);
 
+			//创建及配置Enhancer
 			// Configure CGLIB Enhancer...
 			Enhancer enhancer = createEnhancer();
 			if (classLoader != null) {
@@ -205,6 +206,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 			enhancer.setAttemptLoad(enhancer.getUseCache() && AotDetector.useGeneratedArtifacts());
 			enhancer.setStrategy(new ClassLoaderAwareGeneratorStrategy(classLoader));
 
+			//设置拦截器
 			Callback[] callbacks = getCallbacks(rootClass);
 			Class<?>[] types = new Class<?>[callbacks.length];
 			for (int x = 0; x < types.length; x++) {
@@ -311,8 +313,10 @@ class CglibAopProxy implements AopProxy, Serializable {
 		// Parameters used for optimization choices...
 		boolean isStatic = this.advised.getTargetSource().isStatic();
 		boolean isFrozen = this.advised.isFrozen();
+		//对于expose-proxy属性的处理
 		boolean exposeProxy = this.advised.isExposeProxy();
 
+		//将拦截器封装在DynamicAdvisedInterceptor中
 		// Choose an "aop" interceptor (used for AOP calls).
 		Callback aopInterceptor = new DynamicAdvisedInterceptor(this.advised);
 
@@ -336,6 +340,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 				new StaticDispatcher(this.advised.getTargetSource().getTarget()) : new SerializableNoOp());
 
 		Callback[] mainCallbacks = new Callback[] {
+				//将拦截器加入Callback
 				aopInterceptor,  // for normal advice
 				targetInterceptor,  // invoke target without considering advice, if optimized
 				new SerializableNoOp(),  // no override for methods mapped to this
@@ -688,6 +693,17 @@ class CglibAopProxy implements AopProxy, Serializable {
 			this.advised = advised;
 		}
 
+		/**
+		 * cglib实现代理的核心逻辑
+		 *
+		 * @param proxy "this", the enhanced object
+		 * @param method intercepted Method
+		 * @param args argument array; primitive types are wrapped
+		 * @param methodProxy used to invoke super (non-intercepted method); may be called
+		 * as many times as needed
+		 * @return
+		 * @throws Throwable
+		 */
 		@Override
 		@Nullable
 		public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
@@ -704,11 +720,13 @@ class CglibAopProxy implements AopProxy, Serializable {
 				// Get as late as possible to minimize the time we "own" the target, in case it comes from a pool...
 				target = targetSource.getTarget();
 				Class<?> targetClass = (target != null ? target.getClass() : null);
+				//获取拦截器
 				List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
 				Object retVal;
 				// Check whether we only have one InvokerInterceptor: that is,
 				// no real advice, but just reflective invocation of the target.
 				if (chain.isEmpty()) {
+					//如果拦截器是空则直接激活原有方法
 					// We can skip creating a MethodInvocation: just invoke the target directly.
 					// Note that the final invoker must be an InvokerInterceptor, so we know
 					// it does nothing but a reflective operation on the target, and no hot
@@ -717,6 +735,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 					retVal = AopUtils.invokeJoinpointUsingReflection(target, method, argsToUse);
 				}
 				else {
+					//进入链
 					// We need to create a method invocation...
 					retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
 				}

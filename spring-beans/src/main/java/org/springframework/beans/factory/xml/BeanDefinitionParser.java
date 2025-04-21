@@ -22,6 +22,8 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.lang.Nullable;
 
 /**
+ * 所有的解析器都是对BeanDefinitionParser接口的统一实现，入口都是从parse函数开始的
+ *
  * Interface used by the {@link DefaultBeanDefinitionDocumentReader} to handle custom,
  * top-level (directly under {@code <beans/>}) tags.
  *

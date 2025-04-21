@@ -16,6 +16,12 @@
 
 package org.springframework.beans.factory;
 
+import org.springframework.beans.BeansException;
+import org.springframework.core.ResolvableType;
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
+
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,12 +29,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.springframework.beans.BeansException;
-import org.springframework.core.ResolvableType;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 /**
  * Convenience methods operating on bean factories, in particular
@@ -257,9 +257,11 @@ public abstract class BeanFactoryUtils {
 			ListableBeanFactory lbf, Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
 
 		Assert.notNull(lbf, "ListableBeanFactory must not be null");
+		//通过Advisor.class这个类，获取所有的增强器beanName
 		String[] result = lbf.getBeanNamesForType(type, includeNonSingletons, allowEagerInit);
 		if (lbf instanceof HierarchicalBeanFactory hbf) {
 			if (hbf.getParentBeanFactory() instanceof ListableBeanFactory pbf) {
+				//将增强器的父类bean也加进去
 				String[] parentResult = beanNamesForTypeIncludingAncestors(
 						pbf, type, includeNonSingletons, allowEagerInit);
 				result = mergeNamesWithParent(result, parentResult, hbf);

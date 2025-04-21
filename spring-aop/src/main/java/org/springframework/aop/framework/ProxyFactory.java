@@ -98,6 +98,10 @@ public class ProxyFactory extends ProxyCreatorSupport {
 	}
 
 	/**
+	 * 由于Spring中涉及过多的拦截器、增强器、增强方法等方式来对逻辑进行增强，
+	 * 所以非常有必要统一封装成Advisor来进行代理的创建，完成了增强的封装过程，
+	 * 那么解析最重要的一步就是代理的创建与获取了。
+	 *
 	 * Create a new proxy according to the settings in this factory.
 	 * <p>Can be called repeatedly. Effect will vary if we've added
 	 * or removed interfaces. Can add and remove interceptors.

@@ -16,22 +16,21 @@
 
 package org.springframework.aop.aspectj.annotation;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.aspectj.lang.reflect.PerClauseKind;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.AopConfigException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Helper for retrieving @AspectJ beans from a BeanFactory and building
@@ -90,28 +89,38 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 
 		if (aspectNames == null) {
 			synchronized (this) {
+				/**
+				 * 通过双重锁机制确保aspectBeanNames的线程安全，首次检查aspectNames为null进入同步代码块，
+				 * 再次确认后执行初始化逻辑，避免重复创建
+				 */
 				aspectNames = this.aspectBeanNames;
 				if (aspectNames == null) {
 					List<Advisor> advisors = new ArrayList<>();
 					aspectNames = new ArrayList<>();
+					//获取所有的beanName
 					String[] beanNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 							this.beanFactory, Object.class, true, false);
+					//循环所有的beanName找出对应的增强方法
 					for (String beanName : beanNames) {
 						if (!isEligibleBean(beanName)) {
+							//不符合的bean直接略过，有子类定义规则，默认返回true
 							continue;
 						}
 						// We must be careful not to instantiate beans eagerly as in this case they
 						// would be cached by the Spring container but would not have been weaved.
+						//获取对应的bean的类型
 						Class<?> beanType = this.beanFactory.getType(beanName, false);
 						if (beanType == null) {
 							continue;
 						}
 						if (this.advisorFactory.isAspect(beanType)) {
+							//如果存在Aspect注解
 							try {
 								AspectMetadata amd = new AspectMetadata(beanType, beanName);
 								if (amd.getAjType().getPerClause().getKind() == PerClauseKind.SINGLETON) {
 									MetadataAwareAspectInstanceFactory factory =
 											new BeanFactoryAspectInstanceFactory(this.beanFactory, beanName);
+									//解析标记AspectJ注解中的增强方法
 									List<Advisor> classAdvisors = this.advisorFactory.getAdvisors(factory);
 									if (this.beanFactory.isSingleton(beanName)) {
 										this.advisorsCache.put(beanName, classAdvisors);
