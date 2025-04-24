@@ -16,16 +16,11 @@
 
 package org.springframework.web.servlet;
 
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
-
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.MutablePropertyValues;
@@ -45,6 +40,10 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.support.ServletContextResourceLoader;
 import org.springframework.web.context.support.StandardServletEnvironment;
+
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Simple extension of {@link jakarta.servlet.http.HttpServlet} which treats
@@ -148,13 +147,18 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 	public final void init() throws ServletException {
 
 		// Set bean properties from init parameters.
+		//1.解析init-parameter并封装至pvs中
 		PropertyValues pvs = new ServletConfigPropertyValues(getServletConfig(), this.requiredProperties);
 		if (!pvs.isEmpty()) {
 			try {
+				//2。将当前的这个servlet类转化为一个BeanWrapper，从而能够以Spring的方式来对init-param的值进行注入
 				BeanWrapper bw = PropertyAccessorFactory.forBeanPropertyAccess(this);
 				ResourceLoader resourceLoader = new ServletContextResourceLoader(getServletContext());
+				//3.注册自定义属性编辑器，一旦遇到Resource类型的属性将会使用ResourceEditor进行解析
 				bw.registerCustomEditor(Resource.class, new ResourceEditor(resourceLoader, getEnvironment()));
+				//空实现，留给子类覆盖
 				initBeanWrapper(bw);
+				//覆盖注入
 				bw.setPropertyValues(pvs, true);
 			}
 			catch (BeansException ex) {
@@ -165,6 +169,7 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 			}
 		}
 
+		//5.留给子类扩展
 		// Let subclasses do whatever initialization they like.
 		initServletBean();
 	}
@@ -208,6 +213,8 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 	private static class ServletConfigPropertyValues extends MutablePropertyValues {
 
 		/**
+		 * 封装属性及初始化参数
+		 *
 		 * Create new ServletConfigPropertyValues.
 		 * @param config the ServletConfig we'll use to take PropertyValues from
 		 * @param requiredProperties set of property names we need, where

@@ -16,20 +16,6 @@
 
 package org.springframework.web.servlet;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
@@ -37,7 +23,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -65,7 +50,24 @@ import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.util.ServletRequestPathUtils;
 import org.springframework.web.util.WebUtils;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /**
+ *
+ * DispatcherServlet的doGet,doPost等方法在父类中，并没有重写
+ *
  * Central dispatcher for HTTP request handlers/controllers, e.g. for web UI controllers
  * or HTTP-based remote service exporters. Dispatches to registered handlers for processing
  * a web request, providing convenient mapping and exception handling facilities.
@@ -507,14 +509,75 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * <p>May be overridden in subclasses in order to initialize further strategy objects.
 	 */
 	protected void initStrategies(ApplicationContext context) {
+		//初始化multipart-resolver:主要用来处理文件上传
 		initMultipartResolver(context);
+		/**
+		 * 初始化LocaleResolver：spring国际化配置，在spring的国际化配置中一共有3种使用方式
+		 * 	1.基于url参数的配置 “<a href="?locale=zh_CN">简体中文</a>”，默认参数是locale
+		 * 	2.基于session配置：header里面的accept-language
+		 * 	3.基于cookie的配置：通过浏览器的cookie设置Locale对象
+		 */
 		initLocaleResolver(context);
+		/**
+		 * 初始化themeResolver：spring主题功能，主要包括
+		 * 	1.主题资源：org.Springframework.ui.context.ThemeSource是Spring中主题资源的接口，Spring的主题需要通过ThemeSource接口来实现存放主题信息的资源
+		 * 	2.主题解析器：对于主题解析器有3个常用的实现，①FixedThemeResolver用于选择一个固定的主题。②CookieThemeResolver用于实现用户所选的主题
+		 * 		③SessionThemeResolver用于主题保存在用户的HTTP Session中
+		 * 	3.拦截器：如果需要根据用户请求来改变主题，那么spring提供了一个已经实现的拦截器：ThemeChangeInterceptor
+		 */
 		initThemeResolver(context);
+		/**
+		 * 初始化handlerMapping
+		 * 当客户端发出Request时DispatcherServlet会将Request提交给HandlerMapping，
+		 * 然后HandlerMapping根据Web Application Context的配置来回传给DispatcherServlet相应的Controller。
+		 * 在基于SpringMVC的Web应用程序中，我们可以为DispatcherServlet提供多个Handler Mapping供其使用。
+		 * DispatcherServlet在选用HandlerMapping的过程中，将根据我们所指定的一系列HandlerMapping的优先级进行排序，
+		 * 然后优先使用优先级在前的HandlerMapping。如果当前的HandlerMapping能够返回可用的Handler，
+		 * DispatcherServlet则使用当前返回的Handler进行Web请求的处理，而不再继续询问其他的HandlerMapping。
+		 * 否则，DispatcherServlet将继续按照各个HandlerMapping的优先级进行询问，直到获取一个可用的Handler为止。
+		 */
 		initHandlerMappings(context);
+		/**
+		 * 	初始化handlerAdapters：适配器，如果么有的话，默认加载下面这几个：
+		 *  org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter：http请求处理器适配器
+		 * 	org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter：简单控制器处理器适配器
+		 * 	org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter：请求映射处理器适配器
+		 * 	org.springframework.web.servlet.function.support.HandlerFunctionAdapter：处理器适配器
+		 */
 		initHandlerAdapters(context);
+
+		/**
+		 * 初始化handlerExceptionResolvers：异常处理
+		 * 基于HandlerExceptionResolver接口的异常处理，使用这种方式只需要实现resolveException方法，
+		 * 该方法返回一个ModelAndView对象，在方法内部对异常的类型进行判断，然后尝试生成对应的ModelAndView对象，
+		 * 如果该方法返回了null，则Spring会继续寻找其他的实现了HandlerExceptionResolver接口的bean。
+		 * 换句话说，Spring会搜索所有注册在其环境中的实现了HandlerExceptionResolver接口的bean，
+		 * 逐个执行，直到返回了一个ModelAndView对象。
+		 */
 		initHandlerExceptionResolvers(context);
+		/**
+		 * 初始化requestToViewNameTranslator
+		 * 当Controller处理器方法没有返回一个View对象或逻辑视图名称，并且在该方法中没有直接往response的输出流里面写数据的时候，
+		 * Spring就会采用约定好的方式提供一个逻辑视图名称。这个逻辑视图名称是通过Spring定义的
+		 * org.Springframework.web.servlet.RequestToView NameTranslator接口的getViewName方法来实现的，
+		 * 我们可以实现自己的RequestToViewNameTranslator接口来约定好没有返回视图名称的时候如何确定视图名称
+		 */
 		initRequestToViewNameTranslator(context);
+		/**
+		 * 初始化viewResolvers
+		 * 在SpringMVC中，当Controller将请求处理结果放入到ModelAndView中以后，DispatcherServlet会根据ModelAndView选择合适的视图进行渲染。
+		 * 那么在SpringMVC中是如何选择合适的View呢？View对象是是如何创建的呢？答案就在ViewResolver中。ViewResolver接口定义了resolverViewName方法，
+		 * 根据viewName创建合适类型的View实现。
+		 */
 		initViewResolvers(context);
+		/**
+		 * 初始化flashMapManager
+		 * SpringMVC Flash attributes提供了一个请求存储属性，可供其他请求使用。在使用重定向时候非常必要，
+		 * 例如Post/Redirect/Get模式。Flash attributes在重定向之前暂存（就像存在session中）以便重定向之后还能使用，并立即删除。
+		 * SpringMVC有两个主要的抽象来支持flash attributes。FlashMap用于保持flash attributes ，而 FlashMapManager用于存储、检索、管理FlashMap实例。
+		 * flash attribute支持默认开启（"on"）并不需要显式启用，它永远不会导致HTTP Session的创建。
+		 * 这两个FlashMap实例都可以通过静态方法RequestContextUtils从Spring MVC的任何位置访问。
+		 */
 		initFlashMapManager(context);
 	}
 
@@ -670,6 +733,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		// Ensure we have at least some HandlerAdapters, by registering
 		// default HandlerAdapters if no other adapters are found.
 		if (this.handlerAdapters == null) {
+			//没有找到对应的bean，尝试加载默认的适配器
 			this.handlerAdapters = getDefaultStrategies(context, HandlerAdapter.class);
 			if (logger.isTraceEnabled()) {
 				logger.trace("No HandlerAdapters declared for servlet '" + getServletName() +
@@ -877,6 +941,9 @@ public class DispatcherServlet extends FrameworkServlet {
 	protected <T> List<T> getDefaultStrategies(ApplicationContext context, Class<T> strategyInterface) {
 		if (defaultStrategies == null) {
 			try {
+				/**
+				 * 之前是通过静态代码块加载，现在改成按需加载，文件地址：resources/org/springframework/web/servlet/DispatcherServlet.properties
+				 */
 				// Load default strategy implementations from properties file.
 				// This is currently strictly internal and not meant to be customized
 				// by application developers.
@@ -940,6 +1007,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	protected void doService(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		logRequest(request);
 
+		//处理前的准备工作
 		// Keep a snapshot of the request attributes in case of an include,
 		// to be able to restore the original attributes after the include.
 		Map<String, Object> attributesSnapshot = null;
@@ -976,6 +1044,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 
 		try {
+			//完整的请求处理过程
 			doDispatch(request, response);
 		}
 		finally {
@@ -1058,19 +1127,32 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
+				//1.如果是MultipartContext类型的request则转换request为MultipartHttpServletRequest类型的request
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
 
+				//根据request信息寻找对应的Handler
 				// Determine handler for the current request.
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
+					//如果没找到对应的handler则通过response反馈错误信息
 					noHandlerFound(processedRequest, response);
 					return;
 				}
 
+				//3.根据当前的handler寻找对应的HandlerAdapter
 				// Determine handler adapter for the current request.
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
+				/**
+				 * 在研究Spring对缓存处理的功能支持前，我们先了解一个概念：Last-Modified缓存机制。
+				 * 1．在客户端第一次输入URL时，服务器端会返回内容和状态码200，表示请求成功，同时会添加一个“Last-Modified”的响应头，
+				 * 表示此文件在服务器上的最后更新时间，例如，“Last-Modified:Wed, 14 Mar 2012 10:22:42 GMT”表示最后更新时间为（2012-03-14 10:22）。
+				 * 2．客户端第二次请求此URL时，客户端会向服务器发送请求头“If-Modified-Since”，询问服务器该时间之后当前请求内容是否有被修改过，
+				 * 如“If-Modified-Since: Wed, 14 Mar 2012 10:22:42 GMT”，如果服务器端的内容没有变化，则自动返回HTTP 304状态码（只要响应头，内容为空，这样就节省了网络带宽）。
+				 *
+				 */
+				//如果当前handler支持last-modified头处理
 				// Process last-modified header, if supported by the handler.
 				String method = request.getMethod();
 				boolean isGet = HttpMethod.GET.matches(method);
@@ -1085,6 +1167,7 @@ public class DispatcherServlet extends FrameworkServlet {
 					return;
 				}
 
+				//真正的激活handler并返回视图-默认使用SimpleControllerHandlerAdapter这个的适配器
 				// Actually invoke the handler.
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
@@ -1093,6 +1176,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 
 				applyDefaultViewName(processedRequest, mv);
+				//应用所有拦截器的postHandle方法
 				mappedHandler.applyPostHandle(processedRequest, response, mv);
 			}
 			catch (Exception ex) {
@@ -1103,9 +1187,11 @@ public class DispatcherServlet extends FrameworkServlet {
 				// making them available for @ExceptionHandler methods and other scenarios.
 				dispatchException = new ServletException("Handler dispatch failed: " + err, err);
 			}
+			//渲染ModelAndView
 			processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
 		}
 		catch (Exception ex) {
+			//完成处理激活触发器
 			triggerAfterCompletion(processedRequest, response, mappedHandler, ex);
 		}
 		catch (Throwable err) {
@@ -1158,6 +1244,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			}
 			else {
 				Object handler = (mappedHandler != null ? mappedHandler.getHandler() : null);
+				//异常视图处理
 				mv = processHandlerException(request, response, handler, exception);
 				errorView = (mv != null);
 			}
@@ -1165,6 +1252,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		// Did the handler return a view to render?
 		if (mv != null && !mv.wasCleared()) {
+			//根据视图跳转页面
 			render(mv, request, response);
 			if (errorView) {
 				WebUtils.clearErrorRequestAttributes(request);
@@ -1310,6 +1398,8 @@ public class DispatcherServlet extends FrameworkServlet {
 	}
 
 	/**
+	 * 遍历所有的适配器来找到适合适配器
+	 *
 	 * Return the HandlerAdapter for this handler object.
 	 * @param handler the handler object to find an adapter for
 	 * @throws ServletException if no HandlerAdapter can be found for the handler. This is a fatal error.
@@ -1387,6 +1477,8 @@ public class DispatcherServlet extends FrameworkServlet {
 	}
 
 	/**
+	 * 渲染ModelAndView
+	 *
 	 * Render the given ModelAndView.
 	 * <p>This is the last stage in handling a request. It may involve resolving the view by name.
 	 * @param mv the ModelAndView to render
@@ -1404,6 +1496,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		View view;
 		String viewName = mv.getViewName();
 		if (viewName != null) {
+			//1.解析视图名称
 			// We need to resolve the view name.
 			view = resolveViewName(viewName, mv.getModelInternal(), locale, request);
 			if (view == null) {
@@ -1470,6 +1563,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		if (this.viewResolvers != null) {
 			for (ViewResolver viewResolver : this.viewResolvers) {
+				//以这个为例：org.springframework.web.servlet.view.AbstractCachingViewResolver.resolveViewName
 				View view = viewResolver.resolveViewName(viewName, locale);
 				if (view != null) {
 					return view;

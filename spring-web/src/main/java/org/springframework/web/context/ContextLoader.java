@@ -16,17 +16,9 @@
 
 package org.springframework.web.context;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
 import jakarta.servlet.ServletContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextException;
@@ -41,6 +33,13 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Performs the actual initialization work for the root application context.
@@ -232,6 +231,14 @@ public class ContextLoader {
 
 
 	/**
+	 * initWebApplicationContext函数主要是体现了创建WebApplicationContext实例的一个功能架构，从函数中我们看到了初始化的大致步骤。
+	 * 1．WebApplicationContext存在性的验证。
+	 * 在配置中只允许声明一次ServletContextListener，多次声明会扰乱Spring的执行逻辑，
+	 * 所以这里首先做的就是对此验证，在Spring中如果创建WebApplicationContext实例会记录在ServletContext中以方便全局调用，
+	 * 而使用的key就是WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE，所以验证的方式就是查看ServletContext实例中是否有对应key的属性。
+	 * 2．创建WebApplicationContext实例。
+	 * 如果通过验证，则Spring将创建WebApplicationContext实例的工作委托给了create WebApplicationContext函数。
+	 *
 	 * Initialize Spring's web application context for the given servlet context,
 	 * using the application context provided at construction time, or creating a new one
 	 * according to the "{@link #CONTEXT_CLASS_PARAM contextClass}" and
@@ -244,6 +251,7 @@ public class ContextLoader {
 	 */
 	public WebApplicationContext initWebApplicationContext(ServletContext servletContext) {
 		if (servletContext.getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE) != null) {
+			//web.xml中存在多次ContextLoader定义
 			throw new IllegalStateException(
 					"Cannot initialize context because there is already a root application context present - " +
 					"check whether you have multiple ContextLoader* definitions in your web.xml!");
@@ -260,6 +268,7 @@ public class ContextLoader {
 			// Store context in local instance variable, to guarantee that
 			// it is available on ServletContext shutdown.
 			if (this.context == null) {
+				//初始化context
 				this.context = createWebApplicationContext(servletContext);
 			}
 			if (this.context instanceof ConfigurableWebApplicationContext cwac && !cwac.isActive()) {
@@ -273,6 +282,7 @@ public class ContextLoader {
 				}
 				configureAndRefreshWebApplicationContext(cwac, servletContext);
 			}
+			//记录到servletContext中
 			servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, this.context);
 
 			ClassLoader ccl = Thread.currentThread().getContextClassLoader();
@@ -310,11 +320,13 @@ public class ContextLoader {
 	 * @see ConfigurableWebApplicationContext
 	 */
 	protected WebApplicationContext createWebApplicationContext(ServletContext sc) {
+		//获取WebApplicationContext的实现类
 		Class<?> contextClass = determineContextClass(sc);
 		if (!ConfigurableWebApplicationContext.class.isAssignableFrom(contextClass)) {
 			throw new ApplicationContextException("Custom context class [" + contextClass.getName() +
 					"] is not of type [" + ConfigurableWebApplicationContext.class.getName() + "]");
 		}
+		//获取类实例
 		return (ConfigurableWebApplicationContext) BeanUtils.instantiateClass(contextClass);
 	}
 
@@ -327,6 +339,7 @@ public class ContextLoader {
 	 * @see org.springframework.web.context.support.XmlWebApplicationContext
 	 */
 	protected Class<?> determineContextClass(ServletContext servletContext) {
+		//通过上下文获取contextClass
 		String contextClassName = servletContext.getInitParameter(CONTEXT_CLASS_PARAM);
 		if (contextClassName != null) {
 			try {
@@ -339,10 +352,12 @@ public class ContextLoader {
 		}
 		else {
 			if (defaultStrategies == null) {
+				//加载默认策略
 				// Load default strategy implementations from properties file.
 				// This is currently strictly internal and not meant to be customized
 				// by application developers.
 				try {
+					//之前是通过静态代码块加载的，现在改成按需加载resources/org/springframework/web/context/ContextLoader.properties
 					ClassPathResource resource = new ClassPathResource(DEFAULT_STRATEGIES_PATH, ContextLoader.class);
 					defaultStrategies = PropertiesLoaderUtils.loadProperties(resource);
 				}

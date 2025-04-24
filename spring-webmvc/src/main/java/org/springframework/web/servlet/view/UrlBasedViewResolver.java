@@ -16,13 +16,7 @@
 
 package org.springframework.web.servlet.view;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Ordered;
@@ -31,6 +25,11 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.PatternMatchUtils;
 import org.springframework.web.servlet.View;
+
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Simple implementation of the {@link org.springframework.web.servlet.ViewResolver}
@@ -466,9 +465,11 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 		// If this resolver is not supposed to handle the given view,
 		// return null to pass on to the next resolver in the chain.
 		if (!canHandle(viewName, locale)) {
+			//如果当前解析器不支持当前解析器如viewName为空等情况
 			return null;
 		}
 
+		//处理前缀为redirect:的情况
 		// Check for special "redirect:" prefix.
 		if (viewName.startsWith(REDIRECT_URL_PREFIX)) {
 			String redirectUrl = viewName.substring(REDIRECT_URL_PREFIX.length());
@@ -481,6 +482,7 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 			return applyLifecycleMethods(REDIRECT_URL_PREFIX, view);
 		}
 
+		//处理前缀为forward:的情况
 		// Check for special "forward:" prefix.
 		if (viewName.startsWith(FORWARD_URL_PREFIX)) {
 			String forwardUrl = viewName.substring(FORWARD_URL_PREFIX.length());
@@ -569,7 +571,9 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 	 */
 	protected AbstractUrlBasedView buildView(String viewName) throws Exception {
 		AbstractUrlBasedView view = instantiateView();
+		// 添加前缀以及后缀
 		view.setUrl(getPrefix() + viewName + getSuffix());
+		// 添加必要参数
 		view.setAttributesMap(getAttributesMap());
 
 		String contentType = getContentType();

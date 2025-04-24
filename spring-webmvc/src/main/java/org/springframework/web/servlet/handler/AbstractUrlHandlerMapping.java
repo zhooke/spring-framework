@@ -16,16 +16,8 @@
 
 package org.springframework.web.servlet.handler;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.server.RequestPath;
@@ -42,6 +34,13 @@ import org.springframework.web.util.ServletRequestPathUtils;
 import org.springframework.web.util.UrlPathHelper;
 import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Abstract base class for URL-mapped {@link HandlerMapping} implementations.
@@ -145,10 +144,12 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 	@Override
 	@Nullable
 	protected Object getHandlerInternal(HttpServletRequest request) throws Exception {
+		//获取用于匹配的url有效路径
 		String lookupPath = initLookupPath(request);
 		Object handler;
 		if (usesPathPatterns()) {
 			RequestPath path = ServletRequestPathUtils.getParsedRequestPath(request);
+			//根据路径寻找handler
 			handler = lookupHandler(path, lookupPath, request);
 		}
 		else {
@@ -159,16 +160,20 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 			// expose the PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE for it as well.
 			Object rawHandler = null;
 			if (StringUtils.matchesCharacter(lookupPath, '/')) {
+				//如果请求的路径仅仅是"/"，那么使用RootHandler
 				rawHandler = getRootHandler();
 			}
 			if (rawHandler == null) {
+				//无法找到handler则使用默认的handler
 				rawHandler = getDefaultHandler();
 			}
 			if (rawHandler != null) {
 				// Bean name or resolved handler?
 				if (rawHandler instanceof String handlerName) {
+					//根据beanName获取对应的bean
 					rawHandler = obtainApplicationContext().getBean(handlerName);
 				}
+				//模板方法
 				validateHandler(rawHandler, request);
 				handler = buildPathExposingHandler(rawHandler, lookupPath, lookupPath, null);
 			}
@@ -191,9 +196,11 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 
 		Object handler = getDirectMatch(lookupPath, request);
 		if (handler != null) {
+			//直接匹配的情况处理
 			return handler;
 		}
 
+		//通配符匹配的处理
 		// Pattern match?
 		List<PathPattern> matches = null;
 		for (PathPattern pattern : this.pathPatternHandlerMap.keySet()) {
@@ -203,15 +210,18 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 			}
 		}
 		if (matches == null) {
+			//没有匹配到直接返回null
 			return null;
 		}
 		if (matches.size() > 1) {
+			//排序
 			matches.sort(PathPattern.SPECIFICITY_COMPARATOR);
 			if (logger.isTraceEnabled()) {
 				logger.trace("Matching patterns " + matches);
 			}
 		}
 		PathPattern pattern = matches.get(0);
+		//第一个为handler
 		handler = this.pathPatternHandlerMap.get(pattern);
 		if (handler instanceof String handlerName) {
 			handler = obtainApplicationContext().getBean(handlerName);
@@ -302,10 +312,12 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 
 	@Nullable
 	private Object getDirectMatch(String urlPath, HttpServletRequest request) throws Exception {
+		//通过urlPath获取handler
 		Object handler = this.handlerMap.get(urlPath);
 		if (handler != null) {
 			// Bean name or resolved handler?
 			if (handler instanceof String handlerName) {
+				//通过handlerName获取bean
 				handler = obtainApplicationContext().getBean(handlerName);
 			}
 			validateHandler(handler, request);
